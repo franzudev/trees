@@ -46,6 +46,14 @@ public:
 		return _insert(root, val);
 	}
 
+	node_ptr insert(node_ptr hint, T val) {
+		if (!hint)
+			return nullptr;
+		if (!root)
+			return root = new node(val);
+		return _insert(root, val);
+	}
+
 	node_ptr find(T val) {
 		return _find(root, val);
 	}
@@ -235,9 +243,8 @@ int main()
 	tree.insert(1);
 	tree.insert(0);
 
-	for (int i = 0; i < 20; i++){
+	for (int i = 0; i < 30; i++){
 		nInt = rand() % 1000;
-		std::cout << "inserting: " << nInt << std::endl;
 		tree.insert(nInt);
 	}
 	tree.printTree();
