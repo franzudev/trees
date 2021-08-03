@@ -1,72 +1,117 @@
 #include <iostream>
 
+enum nodeColor {
+	RED,
+	BLACK
+};
+
+template <class T>
 struct Node {
-	int			key;
-	bool		black;
+	T			key;
+	bool		color;
 	struct Node *parent;
 	struct Node *left;
 	struct Node *right;
 
-	Node(int key): key(key), black(true), parent(nullptr), left(nullptr), right(nullptr) {}
+	Node(T key): key(key), color(BLACK), parent(nullptr), left(nullptr), right(nullptr) {}
 
 	bool 		isLeft() {return parent && this == parent->left;}
 	bool 		isRight() {return parent && this == parent->right;}
 	Node		*uncle() {
-		if (parent->parent && parent->isLeft()) {
+		if (parent->parent && parent->isLeft())
 			return parent->parent->right;
-		}
-		if (parent->parent && parent->isRight()) {
+		if (parent->parent && parent->isRight())
 			return parent->parent->left;
-		}
 		return nullptr;
 	}
 };
 
+template <class T>
 class Tree {
 public:
-	typedef	Node	node;
-	typedef Node&	node_ref;
-	typedef Node*	node_ptr;
+	typedef	Node<T>	node;
+	typedef node*	node_ptr;
 
 	node_ptr	root;
 private:
-
-	Tree(): root(nullptr) {}
-	Tree(node_ref node): root(nullptr) {(void)node;}
-	Tree& operator=(node_ref node) {(void)node; return *this;}
-public:
 	Tree(node_ptr root): root(root) {}
+	Tree(node& node): root(nullptr) {(void)node;}
+	Tree& operator=(node& node) {(void)node; return *this;}
+public:
+	Tree(): root(nullptr) {}
 
-	node_ptr insert(node_ptr node, node_ptr n_node) {
-		if (!node || !n_node || node->key == n_node->key)
-			return n_node;
-		if (n_node->key < node->key){
-			if (!node->left)
-				return setLeftNode(node, n_node);
-			return insert(node->left, n_node);
+	node_ptr insert(T val) {
+		if (!root)
+			return root = new node(val);
+		return _insert(root, val);
+	}
+
+	node_ptr find(T val) {
+		return _find(root, val);
+	}
+
+	node_ptr deletion(T val) {
+		node_ptr toDelete = find(root, val);
+		if (!toDelete)
+			return nullptr;
+		//case root
+		if (!toDelete->parent) {}
+		//case leaf
+		if (toDelete->parent && !toDelete->left && !toDelete->right) {
+
 		}
-		if (n_node->key > node->key){
-			if (!node->right)
-				return setRightNode(node, n_node);
-			return insert(node->right, n_node);
-		}
-		return node;
+		// case inside
+		if (toDelete->parent) {}
+
+	}
+
+	void printTree()
+	{
+		printTreeHelper(root,0);
 	}
 
 private:
 
+	node_ptr _insert(node_ptr start, T val) {
+		if (start->key == val)
+			return start;
+		if (val < start->key){
+			if (!start->left)
+				return setLeftNode(start, new node(val));
+			return _insert(start->left, val);
+		}
+		if (val > start->key){
+			if (!start->right)
+				return setRightNode(start, new node(val));
+			return _insert(start->right, val);
+		}
+		return start;
+	}
+
+	node_ptr _find(node_ptr node, T val) {
+		if (!node)
+			return nullptr;
+		if (node->key == val)
+			return node;
+		if (val > node->key)
+			return _find(node->right, val);
+		if (val < node->key)
+			return _find(node->left, val);
+		return node;
+	}
+
 	void	balance(node_ptr ptr) {
 		if (ptr == root) {
-			ptr->black = true;
+			ptr->color = BLACK;
 			return ;
 		}
 		if (!ptr)
 			return ;
-		if (!ptr->parent->black && !ptr->black) {
-			if (ptr->uncle() && !ptr->uncle()->black) {
-				ptr->parent->black = true;
-				ptr->uncle()->black = true;
-				ptr->parent->parent->black = false;
+		if (!ptr->parent->color && !ptr->color) {
+			if (ptr->uncle() && !ptr->uncle()->color) {
+				ptr->parent->color = BLACK;
+				ptr->uncle()->color = BLACK;
+				ptr->parent->parent->color = RED;
 			}
 			else {
 				if (ptr->isLeft() && ptr->parent->isLeft())
@@ -96,8 +141,8 @@ private:
 		gparent->left = buff;
 		if (!parent->parent)
 			root = parent;
-		gparent->black = false;
-		parent->black = true;
+		gparent->color = RED;
+		parent->color = BLACK;
 	}
 
 	void	leftRotate(node_ptr parent, node_ptr gparent) {
@@ -114,8 +159,8 @@ private:
 		gparent->right = buff;
 		if (!parent->parent)
 			root = parent;
-		gparent->black = false;
-		parent->black = true;
+		gparent->color = RED;
+		parent->color = BLACK;
 	}
 
 	void	leftRightRotate(node_ptr child, node_ptr parent, node_ptr gparent) {
@@ -144,20 +189,21 @@ private:
 		leftRotate(child, gparent);
 	}
 
-	node_ptr setLeftNode(node_ptr parent, node_ptr child) {
-		parent->left = child;
+	node_ptr setNode(node_ptr parent, node_ptr child) {
 		child->parent = parent;
-		child->black = false;
+		child->color = RED;
 		balance(child);
 		return child;
 	}
 
+	node_ptr setLeftNode(node_ptr parent, node_ptr child) {
+		parent->left = child;
+		return setNode(parent, child);
+	}
+
 	node_ptr setRightNode(node_ptr parent, node_ptr child) {
 		parent->right = child;
-		child->parent = parent;
-		child->black = false;
-		balance(child);
-		return child;
+		return setNode(parent, child);
 	}
 
 	void printTreeHelper(node_ptr root, int space)
@@ -172,44 +218,30 @@ private:
 			{
 				std::cout << " ";
 			}
-			std::string color = root->black ? "" : "\e[31m";
+			std::string color = root->color ? "" : "\e[31m";
 			std::cout << color << root->key << "\e[0m" << std::endl;
 			printTreeHelper(root->left, space);
 		}
 	}
-
-public:
-	void printTree()
-	{
-		printTreeHelper(root,0);
-	}
-
 };
 
 #include <map>
 
 int main()
 {
-//	std::map<std::string, int> prova;
-//	prova.insert(std::pair<std::string, int>(std::string("ciao"), 1));
-//	prova.insert(std::pair<std::string, int>(std::string("prova"), 2));
-//	prova.insert(std::pair<std::string, int>(std::string("prova2"), 3));
-//	prova.insert(std::pair<std::string, int>(std::string("cia"), 4));
-//
-//	std::map<std::string, int>::iterator provaInt = prova.begin();
-//	for (;provaInt != prova.end(); provaInt++)
-//		std::cout << provaInt->first << " " << provaInt->second << std::endl;
-//	return 0;
-	Node	*root = new Node(50);
-	Tree	tree = Tree(root);
+	Tree<int>	tree;
 	size_t nInt;
+
+	tree.insert(1);
+	tree.insert(0);
 
 	for (int i = 0; i < 20; i++){
 		nInt = rand() % 1000;
 		std::cout << "inserting: " << nInt << std::endl;
-		tree.insert(tree.root,  new Node(nInt));
-		tree.printTree();
+		tree.insert(nInt);
 	}
+	tree.printTree();
+	Node<int> *find = tree.find(0);
 
 	return 0;
 }
